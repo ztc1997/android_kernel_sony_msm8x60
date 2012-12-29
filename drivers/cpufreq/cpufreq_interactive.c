@@ -105,6 +105,7 @@ struct cpufreq_interactive_inputopen {
 };
 
 static struct cpufreq_interactive_inputopen inputopen;
+static struct workqueue_struct *inputopen_wq;
 
 /*
  * Non-zero means longer-term speed boost active.
