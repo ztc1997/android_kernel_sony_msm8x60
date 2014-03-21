@@ -779,6 +779,7 @@ static void __init bus_init(void)
 
 #ifdef CONFIG_CPU_FREQ_MSM
 static struct cpufreq_frequency_table freq_table[NR_CPUS][FREQ_TABLE_SIZE];
+static int checkFrequency(struct clkctl_acpu_speed *f,int size,int cpu);
 
 static void __init cpufreq_table_init(void)
 {
@@ -788,8 +789,12 @@ static void __init cpufreq_table_init(void)
 		int i, freq_cnt = 0;
 		/* Construct the freq_table tables from acpu_freq_tbl. */
 		for (i = 0; acpu_freq_tbl[i].acpuclk_khz != 0
-				&& freq_cnt < ARRAY_SIZE(*freq_table); i++) {
-			if (acpu_freq_tbl[i].use_for_scaling[cpu]) {
+				&& freq_cnt < ARRAY_SIZE(*freq_table); i++) 
+		{
+			if (acpu_freq_tbl[i].use_for_scaling[cpu]) 
+			{
+				if(checkFrequency(&(acpu_freq_tbl[i]),freq_cnt,cpu))
+				{  continue; }
 				freq_table[cpu][freq_cnt].index = freq_cnt;
 				freq_table[cpu][freq_cnt].frequency
 					= acpu_freq_tbl[i].acpuclk_khz;
@@ -808,6 +813,21 @@ static void __init cpufreq_table_init(void)
 		/* Register table with CPUFreq. */
 		cpufreq_frequency_table_get_attr(freq_table[cpu], cpu);
 	}
+}
+
+static int checkFrequency(struct clkctl_acpu_speed *f,int size,int cpu)
+{
+	int i;int flag=0;
+	for(i=0;i<size;i++)
+	{
+	    if(freq_table[cpu][i].frequency==f->acpuclk_khz)//if results true, then frequency has been repeated
+		{
+		    flag=1;
+		    break;
+		}
+	}
+
+	return flag;
 }
 #else
 static void __init cpufreq_table_init(void) {}
