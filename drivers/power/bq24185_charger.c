@@ -28,6 +28,7 @@
 #include <linux/wakelock.h>
 #include <linux/workqueue.h>
 #include <linux/slab.h>
+#include "power_supply.h"
 
 #include <linux/i2c/bq24185_charger.h>
 
@@ -790,6 +791,9 @@ int bq24185_turn_off_charger(void)
 	dev_info(&bd->clientp->dev, "Turning off charger\n");
 
 	bq24185_stop_watchdog_reset(bd);
+
+	triggerLedHack();
+	power_supply_update_leds(psy);
 
 	return 0;
 }

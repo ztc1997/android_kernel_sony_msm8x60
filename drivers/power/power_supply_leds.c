@@ -18,6 +18,7 @@
 #include "power_supply.h"
 
 /* Battery specific LEDs triggers. */
+int led_hack=0;
 
 static void power_supply_update_bat_leds(struct power_supply *psy)
 {
@@ -29,6 +30,17 @@ static void power_supply_update_bat_leds(struct power_supply *psy)
 		return;
 
 	dev_dbg(psy->dev, "%s %d\n", __func__, status.intval);
+
+	if(led_hack==1)
+	{
+		led_trigger_event(psy->charging_full_trig, LED_OFF);
+		led_trigger_event(psy->charging_trig, LED_OFF);
+		led_trigger_event(psy->full_trig, LED_OFF);
+		led_trigger_event(psy->charging_blink_full_solid_trig,
+			LED_OFF);
+		led_hack=0;
+		return;
+	}
 
 	switch (status.intval) {
 	case POWER_SUPPLY_STATUS_FULL:
@@ -177,4 +189,9 @@ void power_supply_remove_triggers(struct power_supply *psy)
 		power_supply_remove_bat_triggers(psy);
 	else
 		power_supply_remove_gen_triggers(psy);
+}
+
+void triggerLedHack(void)
+{
+	led_hack=1;
 }
