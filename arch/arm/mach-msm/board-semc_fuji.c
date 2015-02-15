@@ -115,6 +115,9 @@
 
 #include <mach/simple_remote_msm8x60_pf.h>
 
+//MSM8x60 Thermal Management
+#include <linux/msm_tsens.h>
+
 #include "devices.h"
 #include "devices-msm8x60.h"
 #include <mach/cpuidle.h>
@@ -413,8 +416,8 @@ static struct regulator_init_data saw_s0_init_data = {
 		.constraints = {
 			.name = "8901_s0",
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE,
-			.min_uV = 800000,
-			.max_uV = 1325000,
+			.min_uV = 775000,
+			.max_uV = 1400000,
 		},
 		.consumer_supplies = vreg_consumers_8901_S0,
 		.num_consumer_supplies = ARRAY_SIZE(vreg_consumers_8901_S0),
@@ -424,8 +427,8 @@ static struct regulator_init_data saw_s1_init_data = {
 		.constraints = {
 			.name = "8901_s1",
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE,
-			.min_uV = 800000,
-			.max_uV = 1325000,
+			.min_uV = 775000,
+			.max_uV = 1400000,
 		},
 		.consumer_supplies = vreg_consumers_8901_S1,
 		.num_consumer_supplies = ARRAY_SIZE(vreg_consumers_8901_S1),
@@ -3574,8 +3577,8 @@ static struct regulator_consumer_supply vreg_consumers_PM8058_S1[] = {
 /* RPM early regulator constraints */
 static struct rpm_regulator_init_data rpm_regulator_early_init_data[] = {
 	/*	 ID       a_on pd ss min_uV   max_uV   init_ip    freq */
-	RPM_SMPS(PM8058_S0, 0, 1, 1,  500000, 1325000, SMPS_HMIN, 1p60),
-	RPM_SMPS(PM8058_S1, 0, 1, 1,  500000, 1250000, SMPS_HMIN, 1p60),
+	RPM_SMPS(PM8058_S0, 0, 1, 1,  500000, 1400000, SMPS_HMIN, 1p60),
+	RPM_SMPS(PM8058_S1, 0, 1, 1,  500000, 1400000, SMPS_HMIN, 1p60),
 };
 
 static struct rpm_regulator_platform_data rpm_regulator_early_pdata = {
@@ -3612,10 +3615,19 @@ static struct platform_device *early_devices[] __initdata = {
 	&msm_device_dmov_adm1,
 };
 
+static struct tsens_platform_data fuji_tsens_pdata  = {
+	.tsens_factor    = 1000,
+	.hw_type    = MSM_8660,
+	.tsens_num_sensor  = 6,
+	.slope       = 702,
+};
+
+/*
 static struct platform_device msm_tsens_device = {
 	.name   = "tsens-tm",
 	.id = -1,
 };
+*/
 
 #ifdef CONFIG_SENSORS_MSM_ADC
 
@@ -4264,7 +4276,7 @@ static struct platform_device *fuji_devices[] __initdata = {
 #ifdef CONFIG_SEMC_CHARGER_CRADLE_ARCH
 	&semc_chg_cradle,
 #endif
-	&msm_tsens_device,
+	//&msm_tsens_device,
 	&msm8660_rpm_device,
 #ifdef CONFIG_FUJI_GPIO_KEYPAD
 	&gpio_key_device,
@@ -4964,7 +4976,11 @@ static struct pm8xxx_vibrator_platform_data pm8058_vib_pdata = {
 };
 
 static struct pm8xxx_rtc_platform_data pm8058_rtc_pdata = {
-	.rtc_write_enable       = false,
+#ifdef CONFIG_RTC_SEMC_ETS
+	.rtc_write_enable       = true,
+#else
+  	.rtc_write_enable       = false,
+#endif
 	.rtc_alarm_powerup	= false,
 };
 
@@ -8007,6 +8023,10 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 	uint32_t soc_platform_version;
 
 	pmic_reset_irq = PM8058_IRQ_BASE + PM8058_RESOUT_IRQ;
+
+	//Start MSM Thermal Management
+	msm_tsens_early_init(&fuji_tsens_pdata);
+
 	/*
 	 * Initialize RPM first as other drivers and devices may need
 	 * it for their initialization.
